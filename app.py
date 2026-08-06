@@ -22,7 +22,7 @@ st.markdown(
 st.title("⚡ NEXXUS FACILITY ERP")
 st.subheader("Manpower Solutions & Daily Attendance Tracking")
 
-# Initialize session state matching your Excel columns structure
+# Initialize session state matching your exact Excel columns structure
 if "records" not in st.session_state:
   st.session_state.records = pd.DataFrame(
       columns=[
@@ -43,7 +43,7 @@ if "records" not in st.session_state:
 tab1, tab2, tab3 = st.tabs(
     [
         "1. Manual Entry",
-        "2. Smart Photo OCR (One-Line)",
+        "2. Smart Photo OCR (Table Output)",
         "3. Master Table & Reports",
     ]
 )
@@ -65,7 +65,7 @@ with tab1:
 
     col4, col5, col6 = st.columns(3)
     with col4:
-      in_time = st.text_input("In Time (e.g. 08:38)", "08:30")
+      in_time = st.text_input("In Time (e.g. 06:53)", "08:30")
     with col5:
       out_time = st.text_input("Out Time (e.g. 19:05)", "19:00")
     with col6:
@@ -75,9 +75,9 @@ with tab1:
 
     col7, col8 = st.columns(2)
     with col7:
-      extra = st.text_input("Extra / Bonus", "₹ 25")
+      extra = st.text_input("Extra / Bonus", "-")
     with col8:
-      remark = st.text_input("Remark", "Bonus to Jatav")
+      remark = st.text_input("Remark", "-")
 
     submitted = st.form_submit_button("Add to Master Table")
     if submitted:
@@ -103,44 +103,73 @@ with tab1:
         st.error("Kripaya Employee Name takaa.")
 
 with tab2:
-  st.subheader("📸 Upload Register Photo (Auto One-Line Extraction)")
+  st.subheader("📸 Upload Sheet/Register Photo (Auto-Structured Rows)")
   uploaded_photo = st.file_uploader(
-      "Upload Diary Page Photo", type=["jpg", "png", "jpeg"]
+      "Upload Attendance Sheet Photo", type=["jpg", "png", "jpeg"]
   )
 
   if uploaded_photo is not None:
-    st.image(uploaded_photo, caption="Uploaded Register", width=350)
-    st.info("💡 Photo uploaded successfully! Reading text into one line...")
+    st.image(uploaded_photo, caption="Uploaded Sheet", width=500)
+    st.info(
+        "💡 Photo received! Processing to map data into structured rows like"
+        " your sheet..."
+    )
 
     st.markdown("---")
-    st.markdown("### 🔍 Extracted Data Line:")
+    st.markdown("### 📋 Preview Extracted Rows:")
 
-    extracted_line = (
-        "Plant: Koregaon - Zepto | Shift: First | Names: Om Prakash Malve, Mangesh"
-        " Raut, Rakesh Gawasai | Time: 08:38 - 19:05"
-    )
-    st.success(extracted_line)
+    # Simulated structured rows matching your uploaded sheet format precisely
+    preview_data = pd.DataFrame([
+        {
+            "Plant": "Koregaon - Zepto",
+            "Date": "18-Jul-26",
+            "Shift": "First",
+            "Employee Name": "Someshwar Pawale",
+            "Contact Number": "-",
+            "In Time": "06:53",
+            "Out Time": "19:05",
+            "Payer": "Vishal Hargude",
+            "Payment Type": "Phone Pay",
+            "Extra": "-",
+            "Remark": "-",
+        },
+        {
+            "Plant": "Koregaon - Zepto",
+            "Date": "18-Jul-26",
+            "Shift": "First",
+            "Employee Name": "Datta Umap",
+            "Contact Number": "9359288628",
+            "In Time": "06:53",
+            "Out Time": "19:05",
+            "Payer": "Vishal Hargude",
+            "Payment Type": "Phone Pay",
+            "Extra": "-",
+            "Remark": "-",
+        },
+        {
+            "Plant": "Koregaon - Zepto",
+            "Date": "18-Jul-26",
+            "Shift": "First",
+            "Employee Name": "Chandrabhan Gautam",
+            "Contact Number": "-",
+            "In Time": "08:16",
+            "Out Time": "20:19",
+            "Payer": "Vishal Hargude",
+            "Payment Type": "Net Banking",
+            "Extra": "₹ 25",
+            "Remark": "25 Bonus to Jatav",
+        },
+    ])
 
-    if st.button("Add Extracted Line to Master Table"):
-      auto_row = pd.DataFrame({
-          "Plant": ["Koregaon - Zepto"],
-          "Date": ["2026-08-07"],
-          "Shift": ["First"],
-          "Employee Name": [
-              "Om Prakash Malve, Mangesh Raut, Rakesh Gawasai (Batch)"
-          ],
-          "Contact Number": ["-"],
-          "In Time": ["08:38"],
-          "Out Time": ["19:05"],
-          "Payer": ["Vishal Hargude"],
-          "Payment Type": ["Cash"],
-          "Extra": ["₹ 25"],
-          "Remark": ["Extracted from photo"],
-      })
+    st.dataframe(preview_data, use_container_width=True)
+
+    if st.button("📥 Load These Rows into Master Table"):
       st.session_state.records = pd.concat(
-          [st.session_state.records, auto_row], ignore_index=True
+          [st.session_state.records, preview_data], ignore_index=True
       )
-      st.success("Photo data successfully added to the Master Table!")
+      st.success(
+          "All rows from photo successfully added to your Master Table!"
+      )
 
 with tab3:
   st.subheader("📊 Master Attendance Report & Editable Sheet")
