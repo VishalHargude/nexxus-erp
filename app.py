@@ -26,6 +26,7 @@ st.subheader("Manpower Solutions & Daily Attendance Tracking")
 if "records" not in st.session_state:
   st.session_state.records = pd.DataFrame(
       columns=[
+          "Sr.No",
           "Plant",
           "Date",
           "Shift",
@@ -43,7 +44,7 @@ if "records" not in st.session_state:
 tab1, tab2, tab3 = st.tabs(
     [
         "1. Manual Entry",
-        "2. Smart Photo OCR (Table Output)",
+        "2. Photo to Exact Table Rows",
         "3. Master Table & Reports",
     ]
 )
@@ -65,9 +66,9 @@ with tab1:
 
     col4, col5, col6 = st.columns(3)
     with col4:
-      in_time = st.text_input("In Time (e.g. 06:53)", "08:30")
+      in_time = st.text_input("In Time (e.g. 06:53)", "06:53")
     with col5:
-      out_time = st.text_input("Out Time (e.g. 19:05)", "19:00")
+      out_time = st.text_input("Out Time (e.g. 19:05)", "19:05")
     with col6:
       payment_type = st.selectbox(
           "Payment Type", ["Phone Pay", "Net Banking", "Cash"]
@@ -82,7 +83,13 @@ with tab1:
     submitted = st.form_submit_button("Add to Master Table")
     if submitted:
       if emp_name:
+        next_sr = (
+            len(st.session_state.records) + 685
+            if st.session_state.records.empty
+            else int(st.session_state.records["Sr.No"].max()) + 1
+        )
         new_row = pd.DataFrame({
+            "Sr.No": [next_sr],
             "Plant": [selected_plant],
             "Date": [str(attendance_date)],
             "Shift": [shift],
@@ -103,72 +110,70 @@ with tab1:
         st.error("Kripaya Employee Name takaa.")
 
 with tab2:
-  st.subheader("📸 Upload Sheet/Register Photo (Auto-Structured Rows)")
+  st.subheader("📸 Upload Sheet Photo & Match Exact Lines/Serial Numbers")
   uploaded_photo = st.file_uploader(
-      "Upload Attendance Sheet Photo", type=["jpg", "png", "jpeg"]
+      "Upload Attendance Register Photo", type=["jpg", "png", "jpeg"]
   )
 
   if uploaded_photo is not None:
-    st.image(uploaded_photo, caption="Uploaded Sheet", width=500)
-    st.info(
-        "💡 Photo received! Processing to map data into structured rows like"
-        " your sheet..."
-    )
+    st.image(uploaded_photo, caption="Uploaded Register Sheet", width=450)
 
     st.markdown("---")
-    st.markdown("### 📋 Preview Extracted Rows:")
+    st.markdown(
+        "### 🔢 Specify exact rows/lines present in this photo page:"
+    )
 
-    # Simulated structured rows matching your uploaded sheet format precisely
-    preview_data = pd.DataFrame([
-        {
-            "Plant": "Koregaon - Zepto",
-            "Date": "18-Jul-26",
-            "Shift": "First",
-            "Employee Name": "Someshwar Pawale",
-            "Contact Number": "-",
-            "In Time": "06:53",
-            "Out Time": "19:05",
-            "Payer": "Vishal Hargude",
-            "Payment Type": "Phone Pay",
-            "Extra": "-",
-            "Remark": "-",
-        },
-        {
-            "Plant": "Koregaon - Zepto",
-            "Date": "18-Jul-26",
-            "Shift": "First",
-            "Employee Name": "Datta Umap",
-            "Contact Number": "9359288628",
-            "In Time": "06:53",
-            "Out Time": "19:05",
-            "Payer": "Vishal Hargude",
-            "Payment Type": "Phone Pay",
-            "Extra": "-",
-            "Remark": "-",
-        },
-        {
-            "Plant": "Koregaon - Zepto",
-            "Date": "18-Jul-26",
-            "Shift": "First",
-            "Employee Name": "Chandrabhan Gautam",
-            "Contact Number": "-",
-            "In Time": "08:16",
-            "Out Time": "20:19",
-            "Payer": "Vishal Hargude",
-            "Payment Type": "Net Banking",
-            "Extra": "₹ 25",
-            "Remark": "25 Bonus to Jatav",
-        },
-    ])
+    # Let user input exact number of rows as per their photo/serial numbers
+    num_rows_input = st.number_input(
+        "Enter exact number of entries (rows) in this photo page:",
+        min_value=1,
+        max_value=100,
+        value=5,
+    )
 
-    st.dataframe(preview_data, use_container_width=True)
+    st.info(
+        f"💡 Tula ya photo madhye {num_rows_input} entries disat ahet. Khaliil"
+        " table madhe tichi naave ani vela direct bhara:"
+    )
 
-    if st.button("📥 Load These Rows into Master Table"):
+    # Generate editable template rows matching exact count
+    if "temp_photo_df" not in st.session_state or len(
+        st.session_state.temp_photo_df
+    ) != num_rows_input:
+      start_sr = (
+          685
+          if st.session_state.records.empty
+          else int(st.session_state.records["Sr.No"].max()) + 1
+      )
+      st.session_state.temp_photo_df = pd.DataFrame({
+          "Sr.No": [start_sr + i for i in range(num_rows_input)],
+          "Plant": ["Koregaon - Zepto"] * num_rows_input,
+          "Date": ["18-Jul-26"] * num_rows_input,
+          "Shift": ["First"] * num_rows_input,
+          "Employee Name": [""] * num_rows_input,
+          "Contact Number": ["-"] * num_rows_input,
+          "In Time": ["06:53"] * num_rows_input,
+          "Out Time": ["19:05"] * num_rows_input,
+          "Payer": ["Vishal Hargude"] * num_rows_input,
+          "Payment Type": ["Phone Pay"] * num_rows_input,
+          "Extra": ["-"] * num_rows_input,
+          "Remark": ["-"] * num_rows_input,
+      })
+
+    # Show interactive editor for exact rows mapping
+    edited_photo_rows = st.data_editor(
+        st.session_state.temp_photo_df,
+        use_container_width=True,
+        key="photo_row_editor",
+    )
+
+    if st.button("🚀 Load These Exact Rows into Master Table"):
       st.session_state.records = pd.concat(
-          [st.session_state.records, preview_data], ignore_index=True
+          [st.session_state.records, edited_photo_rows], ignore_index=True
       )
       st.success(
-          "All rows from photo successfully added to your Master Table!"
+          f"Successfully added {num_rows_input} exact rows to your Master"
+          " Table!"
       )
 
 with tab3:
