@@ -25,13 +25,13 @@ def format_time(time_val):
   t_str = str(time_val).strip().replace(":", "").replace(".", "")
   if len(t_str) == 4 and t_str.isdigit():
     return f"{t_str[:2]}:{t_str[2:]}"
-  return time_val
+  return str(time_val).strip()
 
 
 def calculate_attendance_metrics(in_t, out_t):
+  in_str = format_time(in_t)
+  out_str = format_time(out_t)
   try:
-    in_str = format_time(in_t)
-    out_str = format_time(out_t)
     t1 = datetime.strptime(in_str, "%H:%M")
     t2 = datetime.strptime(out_str, "%H:%M")
 
@@ -52,8 +52,8 @@ def calculate_attendance_metrics(in_t, out_t):
 
     payment = 800 if tot_h >= 8 else (tot_h * 100)
     return total_working, extra_working, f"₹ {payment}", in_str, out_str
-  except:
-    return "00:00", "00:00", "₹ 0", in_t, out_t
+  except Exception:
+    return "00:00", "00:00", "₹ 0", in_str, out_str
 
 
 st.title("⚡ NEXXUS FACILITY ERP")
@@ -107,7 +107,7 @@ with tab1:
     with col4:
       in_time = st.text_input("In Time (e.g. 0653 or 06:53)", "06:53")
     with col5:
-      out_time = st.text_input("Out Time (e.g. 1905 or 19:05)", "19:05")
+      out_time = st.text_input("Out Time (e.g. 2100 or 21:00)", "19:05")
     with col6:
       payment_type = st.selectbox(
           "Payment Type", ["Phone Pay", "Net Banking", "Cash"]
@@ -266,6 +266,7 @@ with tab3:
           "Master table updated and all working hours/payments recalculated"
           " successfully!"
       )
+      st.rerun()
 
     csv = st.session_state.records.to_csv(index=False).encode("utf-8")
     st.download_button(
