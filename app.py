@@ -60,7 +60,6 @@ def calculate_attendance_metrics(in_t, out_t):
 st.title("⚡ NEXXUS FACILITY ERP")
 st.subheader("Manpower Solutions & Attendance Management")
 
-# Exact columns matching your Excel/Photo format
 columns_list = [
     "Sr.No",
     "Plant",
@@ -88,8 +87,7 @@ tab1, tab2, tab3 = st.tabs([
     "1. Manual Entry",
     "2. AI Handwriting Register Reader",
     "3. Master Table & Smooth Editing",
-]
-)
+])
 
 with tab1:
   st.subheader("Add Individual Attendance Record")
@@ -130,7 +128,7 @@ with tab1:
     if submitted:
       if emp_name:
         next_sr = (
-            685
+            1
             if st.session_state.records.empty
             else int(st.session_state.records["Sr.No"].max()) + 1
         )
@@ -185,7 +183,6 @@ with tab2:
     if st.button("🤖 Read Handwriting & Extract Attendance"):
       with st.spinner("AI is reading the register handwriting... Please wait."):
         try:
-          # Using Gemini Vision to read names and times from the image
           image_bytes = uploaded_photo.getvalue()
           model = genai.GenerativeModel("gemini-1.5-flash")
           response = model.generate_content([
@@ -199,9 +196,8 @@ with tab2:
           st.success("Handwriting read successfully by AI!")
           st.write(extracted_text)
 
-          # Add rows based on extraction or create generic template rows if empty
           start_sr = (
-              685
+              1
               if st.session_state.records.empty
               else int(st.session_state.records["Sr.No"].max()) + 1
           )
@@ -229,18 +225,15 @@ with tab2:
           )
           st.rerun()
         except Exception as e:
-          st.error(
-              "Could not process image automatically. Please add manually or"
-              f" check API key. Error: {e}"
-          )
+          st.error(f"Could not process image automatically. Error: {e}")
 
 with tab3:
-  st.subheader("📊 Master Attendance Table (Exact Format & Auto-Format)")
+  st.subheader("📊 Master Attendance Table")
   if not st.session_state.records.empty:
     st.info(
-        "💡 Tip: Time madhe `2100` type karun baher click kar, ani khali"
-        " 'Save & Format All Rows' dablas ki sagle calculations ani format"
-        " barobar fix hotiil!"
+        "💡 Tip: Time madhe `2100` type karun baher click kara, ani khali"
+        " 'Save & Format All Rows' dabla ki sagle serial numbers, calculations"
+        " ani formats barobar fix hotiil!"
     )
 
     edited_df = st.data_editor(
@@ -263,7 +256,7 @@ with tab3:
         edited_df.at[idx, "Cash"] = cash_v
 
       st.session_state.records = edited_df
-      st.success("Master table updated successfully with exact format!")
+      st.success("Master table updated successfully starting from Serial No. 1!")
       st.rerun()
 
     csv = st.session_state.records.to_csv(index=False).encode("utf-8")
@@ -274,7 +267,4 @@ with tab3:
         mime="text/csv",
     )
   else:
-    st.warning(
-        "Ajun kontahi record nahiye. Tab 1 madhun kinwa Tab 2 madhun entries"
-        " add kara."
-    )
+    st.warning("Ajun kontahi record nahiye. Entries add kara.")
