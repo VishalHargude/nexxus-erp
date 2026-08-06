@@ -44,7 +44,7 @@ if "records" not in st.session_state:
 tab1, tab2, tab3 = st.tabs(
     [
         "1. Manual Entry",
-        "2. Photo to Exact Table Rows",
+        "2. Photo to Exact Entries (Multi-Row)",
         "3. Master Table & Reports",
     ]
 )
@@ -66,9 +66,9 @@ with tab1:
 
     col4, col5, col6 = st.columns(3)
     with col4:
-      in_time = st.text_input("In Time (e.g. 06:53)", "06:53")
+      in_time = st.text_input("In Time", "06:53")
     with col5:
-      out_time = st.text_input("Out Time (e.g. 19:05)", "19:05")
+      out_time = st.text_input("Out Time", "19:05")
     with col6:
       payment_type = st.selectbox(
           "Payment Type", ["Phone Pay", "Net Banking", "Cash"]
@@ -84,7 +84,7 @@ with tab1:
     if submitted:
       if emp_name:
         next_sr = (
-            len(st.session_state.records) + 685
+            685
             if st.session_state.records.empty
             else int(st.session_state.records["Sr.No"].max()) + 1
         )
@@ -110,70 +110,76 @@ with tab1:
         st.error("Kripaya Employee Name takaa.")
 
 with tab2:
-  st.subheader("📸 Upload Sheet Photo & Match Exact Lines/Serial Numbers")
+  st.subheader(
+      "📸 Upload Register Photo & Generate Exact Number of Rows (e.g. 13, 100"
+      " etc.)"
+  )
   uploaded_photo = st.file_uploader(
-      "Upload Attendance Register Photo", type=["jpg", "png", "jpeg"]
+      "Upload Register Page Photo", type=["jpg", "png", "jpeg"]
   )
 
   if uploaded_photo is not None:
-    st.image(uploaded_photo, caption="Uploaded Register Sheet", width=450)
+    st.image(uploaded_photo, caption="Uploaded Register Reference", width=450)
 
     st.markdown("---")
-    st.markdown(
-        "### 🔢 Specify exact rows/lines present in this photo page:"
-    )
+    st.markdown("### ⚙️ Configure Rows based on Photo:")
 
-    # Let user input exact number of rows as per their photo/serial numbers
-    num_rows_input = st.number_input(
-        "Enter exact number of entries (rows) in this photo page:",
-        min_value=1,
-        max_value=100,
-        value=5,
-    )
+    col_p1, col_p2 = st.columns(2)
+    with col_p1:
+      # Default set to 13 as per your mention
+      total_entries = st.number_input(
+          "Kiti naave/entries ahet photo madhye? (Exact Count)",
+          min_value=1,
+          max_value=500,
+          value=13,
+      )
+    with col_p2:
+      default_plant = st.selectbox(
+          "Default Plant for this batch",
+          ["Koregaon - Zepto", "Vadhu - ZEPTO", "Plant 2 - Chakan"],
+      )
 
     st.info(
-        f"💡 Tula ya photo madhye {num_rows_input} entries disat ahet. Khaliil"
-        " table madhe tichi naave ani vela direct bhara:"
+        f"💡 Photo madhye {total_entries} entries ahet. Khaliil table madhe"
+        " tichi naave, in-time, out-time direct bhara kinwa paste kara:"
     )
 
-    # Generate editable template rows matching exact count
-    if "temp_photo_df" not in st.session_state or len(
-        st.session_state.temp_photo_df
-    ) != num_rows_input:
+    # Generate exact rows DataFrame
+    if "batch_df" not in st.session_state or len(st.session_state.batch_df) != total_entries:
       start_sr = (
           685
           if st.session_state.records.empty
           else int(st.session_state.records["Sr.No"].max()) + 1
       )
-      st.session_state.temp_photo_df = pd.DataFrame({
-          "Sr.No": [start_sr + i for i in range(num_rows_input)],
-          "Plant": ["Koregaon - Zepto"] * num_rows_input,
-          "Date": ["18-Jul-26"] * num_rows_input,
-          "Shift": ["First"] * num_rows_input,
-          "Employee Name": [""] * num_rows_input,
-          "Contact Number": ["-"] * num_rows_input,
-          "In Time": ["06:53"] * num_rows_input,
-          "Out Time": ["19:05"] * num_rows_input,
-          "Payer": ["Vishal Hargude"] * num_rows_input,
-          "Payment Type": ["Phone Pay"] * num_rows_input,
-          "Extra": ["-"] * num_rows_input,
-          "Remark": ["-"] * num_rows_input,
+      st.session_state.batch_df = pd.DataFrame({
+          "Sr.No": [start_sr + i for i in range(total_entries)],
+          "Plant": [default_plant] * total_entries,
+          "Date": ["18-Jul-26"] * total_entries,
+          "Shift": ["First"] * total_entries,
+          "Employee Name": [""
+                            for _ in range(total_entries)],
+          "Contact Number": ["-" for _ in range(total_entries)],
+          "In Time": ["06:53" for _ in range(total_entries)],
+          "Out Time": ["19:05" for _ in range(total_entries)],
+          "Payer": ["Vishal Hargude" for _ in range(total_entries)],
+          "Payment Type": ["Phone Pay" for _ in range(total_entries)],
+          "Extra": ["-" for _ in range(total_entries)],
+          "Remark": ["-" for _ in range(total_entries)],
       })
 
-    # Show interactive editor for exact rows mapping
-    edited_photo_rows = st.data_editor(
-        st.session_state.temp_photo_df,
+    # Editable grid matching exact count
+    edited_batch = st.data_editor(
+        st.session_state.batch_df,
         use_container_width=True,
-        key="photo_row_editor",
+        key="batch_data_editor",
     )
 
-    if st.button("🚀 Load These Exact Rows into Master Table"):
+    if st.button("🚀 Push All These Rows to Master Table"):
       st.session_state.records = pd.concat(
-          [st.session_state.records, edited_photo_rows], ignore_index=True
+          [st.session_state.records, edited_batch], ignore_index=True
       )
       st.success(
-          f"Successfully added {num_rows_input} exact rows to your Master"
-          " Table!"
+          f"Successfully added all {total_entries} rows to your Master Table!"
       )
 
 with tab3:
@@ -200,7 +206,4 @@ with tab3:
         mime="text/csv",
     )
   else:
-    st.warning(
-        "Ajun kontahi record save kela nahiye. Photo OCR kinwa Form vaprun"
-        " records add kara."
-    )
+    st.warning("Ajun kontahi record save kela nahiye.")
