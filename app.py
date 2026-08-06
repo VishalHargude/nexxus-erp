@@ -84,7 +84,7 @@ tab1, tab2, tab3 = st.tabs(
     [
         "1. Manual Entry",
         "2. Bulk Register Batch (50-100 Rows)",
-        "3. Master Table & Auto-Calculations",
+        "3. Master Table (Instant Auto-Update)",
     ]
 )
 
@@ -119,7 +119,7 @@ with tab1:
     with col8:
       remark = st.text_input("Remark", "-")
 
-    submitted = st.form_submit_button("Add & Auto-Calculate")
+    submitted = st.form_submit_button("Add to Master Table")
     if submitted:
       if emp_name:
         next_sr = (
@@ -151,7 +151,7 @@ with tab1:
         st.session_state.records = pd.concat(
             [st.session_state.records, new_row], ignore_index=True
         )
-        st.success(f"Record added & calculated successfully for {emp_name}!")
+        st.success(f"Record added successfully for {emp_name}!")
       else:
         st.error("Kripaya Employee Name takaa.")
 
@@ -172,7 +172,7 @@ with tab2:
       num_entries = st.number_input(
           "Kiti entries ahet photo madhye? (Enter exact count e.g. 50, 100)",
           min_value=1,
-          max_value=200,
+          max_value=500,
           value=13,
       )
     with col_b2:
@@ -182,26 +182,21 @@ with tab2:
           key="batch_plant",
       )
 
-    st.info(
-        f"💡 {num_entries} rows tayar kele ahet. Tumhi naave taku shakshil ani"
-        " time (e.g. 2100) taklas tari to automatic 21:00 hoil."
-    )
-
-    if "bulk_df" not in st.session_state or len(st.session_state.bulk_df) != num_entries:
+    if st.button("🚀 Generate Exact Rows in Master Table"):
       start_sr = (
           685
           if st.session_state.records.empty
           else int(st.session_state.records["Sr.No"].max()) + 1
       )
-      st.session_state.bulk_df = pd.DataFrame({
+      new_batch = pd.DataFrame({
           "Sr.No": [start_sr + i for i in range(num_entries)],
           "Plant": [default_plant] * num_entries,
           "Date": ["18-Jul-26"] * num_entries,
           "Shift": ["First"] * num_entries,
           "Employee Name": ["" for _ in range(num_entries)],
           "Contact Number": ["-" for _ in range(num_entries)],
-          "In Time": ["0653" for _ in range(num_entries)],
-          "Out Time": ["1905" for _ in range(num_entries)],
+          "In Time": ["06:53" for _ in range(num_entries)],
+          "Out Time": ["19:05" for _ in range(num_entries)],
           "Total Working Hours": ["12:12" for _ in range(num_entries)],
           "Extra Working Hours": ["04:12" for _ in range(num_entries)],
           "System Generated Payment": ["₹ 800" for _ in range(num_entries)],
@@ -210,64 +205,57 @@ with tab2:
           "Extra": ["-" for _ in range(num_entries)],
           "Remark": ["-" for _ in range(num_entries)],
       })
-
-    edited_bulk = st.data_editor(
-        st.session_state.bulk_df,
-        use_container_width=True,
-        key="bulk_data_editor",
-    )
-
-    if st.button("🚀 Process & Push Bulk Rows to Master Table"):
-      for idx, row in edited_bulk.iterrows():
-        tot, ot, pay, f_in, f_out = calculate_attendance_metrics(
-            row["In Time"], row["Out Time"]
-        )
-        edited_bulk.at[idx, "In Time"] = f_in
-        edited_bulk.at[idx, "Out Time"] = f_out
-        edited_bulk.at[idx, "Total Working Hours"] = tot
-        edited_bulk.at[idx, "Extra Working Hours"] = ot
-        edited_bulk.at[idx, "System Generated Payment"] = pay
-
       st.session_state.records = pd.concat(
-          [st.session_state.records, edited_bulk], ignore_index=True
+          [st.session_state.records, new_batch], ignore_index=True
       )
       st.success(
-          f"Successfully processed and added all {num_entries} rows to Master"
-          " Table!"
-      )
-
-with tab3:
-  st.subheader("📊 Master Attendance Report & Auto-Update Engine")
-  if not st.session_state.records.empty:
-    st.info(
-        "💡 Tip: Tula kontahi In Time ya Out Time (jase ki 2100) badalaycha asel"
-        " tar direct ya table madhe click karun badal. Khali 'Recalculate &"
-        " Save Changes' dablas ki Working Hours, OT ani Payment automatic"
-        " update hoil!"
-    )
-
-    edited_df = st.data_editor(
-        st.session_state.records, use_container_width=True, num_rows="dynamic"
-    )
-
-    if st.button("💾 Recalculate & Save All Changes"):
-      for idx, row in edited_df.iterrows():
-        t_work, e_work, s_pay, f_in, f_out = calculate_attendance_metrics(
-            row["In Time"], row["Out Time"]
-        )
-        edited_df.at[idx, "In Time"] = f_in
-        edited_df.at[idx, "Out Time"] = f_out
-        edited_df.at[idx, "Total Working Hours"] = t_work
-        edited_df.at[idx, "Extra Working Hours"] = e_work
-        edited_df.at[idx, "System Generated Payment"] = s_pay
-
-      st.session_state.records = edited_df
-      st.success(
-          "Master table updated and all working hours/payments recalculated"
-          " successfully!"
+          f"Successfully generated {num_entries} rows! Tab 3 madhe jaun naave"
+          " type kara."
       )
       st.rerun()
 
+with tab3:
+  st.subheader("📊 Master Attendance Report (Instant Live Auto-Update)")
+  if not st.session_state.records.empty:
+    st.info(
+        "💡 Kontechya hi cell madhe time (jasa ki 2100) type kar, bahar click"
+        " kar—to instant `21:00` houn Working Hours ani Payment auto-update"
+        " hoil!"
+    )
+
+    # Instant Editable Table with Auto-Calculation on Change
+    edited_df = st.data_editor(
+        st.session_state.records,
+        use_container_width=True,
+        num_rows="dynamic",
+        key="master_live_editor",
+    )
+
+    # Check for changes and update instantly without any button
+    data_changed = False
+    for idx, row in edited_df.iterrows():
+      tot, ot, pay, f_in, f_out = calculate_attendance_metrics(
+          row["In Time"], row["Out Time"]
+      )
+      if (
+          row["In Time"] != f_in
+          or row["Out Time"] != f_out
+          or row["Total Working Hours"] != tot
+          or row["Extra Working Hours"] != ot
+          or row["System Generated Payment"] != pay
+      ):
+        edited_df.at[idx, "In Time"] = f_in
+        edited_df.at[idx, "Out Time"] = f_out
+        edited_df.at[idx, "Total Working Hours"] = tot
+        edited_df.at[idx, "Extra Working Hours"] = ot
+        edited_df.at[idx, "System Generated Payment"] = pay
+        data_changed = True
+
+    if data_changed:
+      st.session_state.records = edited_df
+      st.rerun()
+
+    st.markdown("---")
     csv = st.session_state.records.to_csv(index=False).encode("utf-8")
     st.download_button(
         label="📥 Download Excel/CSV Report",
@@ -276,4 +264,7 @@ with tab3:
         mime="text/csv",
     )
   else:
-    st.warning("Ajun kontahi record save kela nahiye.")
+    st.warning(
+        "Ajun kontahi record nahiye. Tab 2 madhun photo takun rows generate"
+        " kara."
+    )
