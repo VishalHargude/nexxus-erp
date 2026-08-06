@@ -83,8 +83,8 @@ if "records" not in st.session_state:
 tab1, tab2, tab3 = st.tabs(
     [
         "1. Manual Entry",
-        "2. Bulk Register Batch (50-100 Rows)",
-        "3. Master Table (Instant Auto-Update)",
+        "2. Bulk Register Batch (Photo Rows)",
+        "3. Master Table & Smooth Editing",
     ]
 )
 
@@ -105,9 +105,9 @@ with tab1:
 
     col4, col5, col6 = st.columns(3)
     with col4:
-      in_time = st.text_input("In Time (e.g. 0653 or 06:53)", "06:53")
+      in_time = st.text_input("In Time (e.g. 0653)", "06:53")
     with col5:
-      out_time = st.text_input("Out Time (e.g. 2100 or 21:00)", "19:05")
+      out_time = st.text_input("Out Time (e.g. 2100)", "19:05")
     with col6:
       payment_type = st.selectbox(
           "Payment Type", ["Phone Pay", "Net Banking", "Cash"]
@@ -156,21 +156,18 @@ with tab1:
         st.error("Kripaya Employee Name takaa.")
 
 with tab2:
-  st.subheader(
-      "📸 Upload Register Photo & Generate Bulk Rows (50, 100 or as needed)"
-  )
+  st.subheader("📸 Generate Bulk Rows for Photo (e.g. 50 or 100 entries)")
   uploaded_photo = st.file_uploader(
       "Upload Register Page Photo", type=["jpg", "png", "jpeg"]
   )
 
   if uploaded_photo is not None:
-    st.image(uploaded_photo, caption="Uploaded Register Reference", width=500)
+    st.image(uploaded_photo, caption="Uploaded Register Reference", width=450)
 
-    st.markdown("---")
     col_b1, col_b2 = st.columns(2)
     with col_b1:
       num_entries = st.number_input(
-          "Kiti entries ahet photo madhye? (Enter exact count e.g. 50, 100)",
+          "Kiti entries ahet photo madhye?",
           min_value=1,
           max_value=500,
           value=13,
@@ -179,10 +176,10 @@ with tab2:
       default_plant = st.selectbox(
           "Plant Name",
           ["Koregaon - Zepto", "Vadhu - ZEPTO", "Plant 2 - Chakan"],
-          key="batch_plant",
+          key="batch_plant_smooth",
       )
 
-    if st.button("🚀 Generate Exact Rows in Master Table"):
+    if st.button("🚀 Generate Empty Rows in Master Table"):
       start_sr = (
           685
           if st.session_state.records.empty
@@ -209,50 +206,41 @@ with tab2:
           [st.session_state.records, new_batch], ignore_index=True
       )
       st.success(
-          f"Successfully generated {num_entries} rows! Tab 3 madhe jaun naave"
-          " type kara."
+          f"Successfully generated {num_entries} rows! Ata Tab 3 madhe jaun"
+          " aramshir type kara."
       )
-      st.rerun()
 
 with tab3:
-  st.subheader("📊 Master Attendance Report (Instant Live Auto-Update)")
+  st.subheader("📊 Master Attendance Report (Smooth Cursor Typing)")
   if not st.session_state.records.empty:
     st.info(
-        "💡 Kontechya hi cell madhe time (jasa ki 2100) type kar, bahar click"
-        " kar—to instant `21:00` houn Working Hours ani Payment auto-update"
-        " hoil!"
+        "💡 Tip: Ata tu table madhe kuthepan type karshil tar cursor halnar"
+        " nahi! Naave ani time (jasa 2100) taklyanar khaliil button dab ki sagle"
+        " formats (`21:00`), Working Hours, OT ani Payment automatic fix"
+        " hotiil."
     )
 
-    # Instant Editable Table with Auto-Calculation on Change
+    # Completely stable editor without auto-rerun during typing
     edited_df = st.data_editor(
         st.session_state.records,
         use_container_width=True,
         num_rows="dynamic",
-        key="master_live_editor",
+        key="smooth_master_editor",
     )
 
-    # Check for changes and update instantly without any button
-    data_changed = False
-    for idx, row in edited_df.iterrows():
-      tot, ot, pay, f_in, f_out = calculate_attendance_metrics(
-          row["In Time"], row["Out Time"]
-      )
-      if (
-          row["In Time"] != f_in
-          or row["Out Time"] != f_out
-          or row["Total Working Hours"] != tot
-          or row["Extra Working Hours"] != ot
-          or row["System Generated Payment"] != pay
-      ):
+    if st.button("💾 Save & Format All Rows"):
+      for idx, row in edited_df.iterrows():
+        tot, ot, pay, f_in, f_out = calculate_attendance_metrics(
+            row["In Time"], row["Out Time"]
+        )
         edited_df.at[idx, "In Time"] = f_in
         edited_df.at[idx, "Out Time"] = f_out
         edited_df.at[idx, "Total Working Hours"] = tot
         edited_df.at[idx, "Extra Working Hours"] = ot
         edited_df.at[idx, "System Generated Payment"] = pay
-        data_changed = True
 
-    if data_changed:
       st.session_state.records = edited_df
+      st.success("All times formatted and calculations updated successfully!")
       st.rerun()
 
     st.markdown("---")
@@ -265,6 +253,5 @@ with tab3:
     )
   else:
     st.warning(
-        "Ajun kontahi record nahiye. Tab 2 madhun photo takun rows generate"
-        " kara."
+        "Ajun kontahi record nahiye. Tab 2 madhun rows generate kara."
     )
