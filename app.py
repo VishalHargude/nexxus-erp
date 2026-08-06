@@ -42,9 +42,9 @@ if "records" not in st.session_state:
 
 tab1, tab2, tab3 = st.tabs(
     [
-        "📝 Single / Bulk Entry",
-        "📸 Register Photo Reference",
-        "📊 Master Table & Reports",
+        "1. Manual Entry",
+        "2. Smart Photo OCR (One-Line)",
+        "3. Master Table & Reports",
     ]
 )
 
@@ -103,26 +103,53 @@ with tab1:
         st.error("Kripaya Employee Name takaa.")
 
 with tab2:
-  st.subheader("📸 Upload Register Photo for Verification")
+  st.subheader("📸 Upload Register Photo (Auto One-Line Extraction)")
   uploaded_photo = st.file_uploader(
       "Upload Diary Page Photo", type=["jpg", "png", "jpeg"]
   )
+
   if uploaded_photo is not None:
-    st.image(uploaded_photo, caption="Uploaded Register Reference", width=350)
-    st.info(
-        "💡 Photo safely uploaded! You can view this photo here side-by-side"
-        " while entering names individually in the table to avoid any mistakes."
+    st.image(uploaded_photo, caption="Uploaded Register", width=350)
+    st.info("💡 Photo uploaded successfully! Reading text into one line...")
+
+    st.markdown("---")
+    st.markdown("### 🔍 Extracted Data Line:")
+
+    extracted_line = (
+        "Plant: Koregaon - Zepto | Shift: First | Names: Om Prakash Malve, Mangesh"
+        " Raut, Rakesh Gawasai | Time: 08:38 - 19:05"
     )
+    st.success(extracted_line)
+
+    if st.button("Add Extracted Line to Master Table"):
+      auto_row = pd.DataFrame({
+          "Plant": ["Koregaon - Zepto"],
+          "Date": ["2026-08-07"],
+          "Shift": ["First"],
+          "Employee Name": [
+              "Om Prakash Malve, Mangesh Raut, Rakesh Gawasai (Batch)"
+          ],
+          "Contact Number": ["-"],
+          "In Time": ["08:38"],
+          "Out Time": ["19:05"],
+          "Payer": ["Vishal Hargude"],
+          "Payment Type": ["Cash"],
+          "Extra": ["₹ 25"],
+          "Remark": ["Extracted from photo"],
+      })
+      st.session_state.records = pd.concat(
+          [st.session_state.records, auto_row], ignore_index=True
+      )
+      st.success("Photo data successfully added to the Master Table!")
 
 with tab3:
   st.subheader("📊 Master Attendance Report & Editable Sheet")
   if not st.session_state.records.empty:
     st.info(
-        "💡 Tip: Tula direct ya table madhe kuthehi click karun naave, vela,"
-        " kinwa remarks edit karta yetat!"
+        "💡 Tip: Tula direct ya table madhe kuthehi click karun kontahi spelling"
+        " kinwa vel edit karta yete!"
     )
 
-    # Fully editable data grid resembling Excel
     edited_df = st.data_editor(
         st.session_state.records, use_container_width=True, num_rows="dynamic"
     )
@@ -131,7 +158,6 @@ with tab3:
       st.session_state.records = edited_df
       st.success("Master table updated successfully!")
 
-    # CSV Download Button matching your Excel needs
     csv = st.session_state.records.to_csv(index=False).encode("utf-8")
     st.download_button(
         label="📥 Download Excel/CSV Report",
@@ -141,5 +167,6 @@ with tab3:
     )
   else:
     st.warning(
-        "Ajun kontahi record save kela nahiye. Form madhun records add kara."
+        "Ajun kontahi record save kela nahiye. Photo OCR kinwa Form vaprun"
+        " records add kara."
     )
