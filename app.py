@@ -180,7 +180,7 @@ with tab2:
     with c2:
       date_in = st.date_input("Date")
     with c3:
-      shift_in = st.selectbox("Night/Shift", ["First", "Second", "Night"])
+      shift_in = st.selectbox("Night/Shift", ["First", "Second", "Night", "RO"])
     with c4:
       name_in = st.text_input("Employee Name", placeholder="Name")
     with c5:
