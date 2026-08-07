@@ -3,41 +3,118 @@ import pandas as pd
 import streamlit as st
 
 st.set_page_config(
-    page_title="NEXXUS Facility ERP", page_icon="⚡", layout="wide"
+    page_title="NEXXUS Facility ERP - Login", page_icon="⚡", layout="wide"
 )
 
-# Professional Corporate Dark Theme Styling
+# Custom Styling to match the professional two-column split theme
 st.markdown(
     """
     <style>
-    .main { background-color: #0e1117; color: #e6e6e6; font-family: sans-serif; }
-    h1, h2, h3 { color: #ff7518; font-weight: 600; }
-    .stButton>button { background-color: #ff7518; color: white; font-weight: bold; border-radius: 6px; border: none; padding: 0.5rem 1rem; width: 100%; }
+    .main { background-color: #f4f6f9; font-family: sans-serif; }
+    
+    /* Login Container Card */
+    .login-card {
+        background-color: white;
+        padding: 40px;
+        border-radius: 16px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    }
+    
+    /* Left Banner Styling inside code */
+    .left-banner {
+        background: linear-gradient(135deg, #ff7518 0%, #e06612 100%);
+        padding: 50px;
+        border-radius: 16px 0 0 16px;
+        color: white;
+        height: 100%;
+    }
+    
+    h1, h2, h3 { color: #ff7518; font-weight: 700; }
+    .stButton>button { background-color: #ff7518; color: white; font-weight: bold; border-radius: 8px; border: none; padding: 0.75rem 1rem; width: 100%; }
     .stButton>button:hover { background-color: #e06612; }
-    .stDataFrame { border-radius: 8px; overflow: hidden; }
     </style>
 """,
     unsafe_allow_html=True,
 )
 
-# 1. LOGIN SYSTEM
+# 1. LOGIN SYSTEM WITH TWO-COLUMN THEME LAYOUT
 if "logged_in" not in st.session_state:
   st.session_state.logged_in = False
 
 if not st.session_state.logged_in:
-  st.title("⚡ NEXXUS FACILITY ERP - Login")
-  st.subheader("Please login to access manpower records")
-  with st.form("login_form"):
-    username = st.text_input("Username", value="admin")
-    password = st.text_input("Password", type="password")
-    login_btn = st.form_submit_button("Login")
-    if login_btn:
-      if username == "admin" and password == "admin123":
-        st.session_state.logged_in = True
-        st.success("Login successful!")
-        st.rerun()
-      else:
-        st.error("Invalid Username or Password! (Default: admin / admin123)")
+  col_left, col_right = st.columns([1, 1], gap="large")
+
+  with col_left:
+    st.markdown(
+        """
+        <div style="background: linear-gradient(180deg, #ff7518 0%, #cc5500 100%); padding: 50px; border-radius: 16px; color: white; height: 550px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <h1 style="color: white; font-size: 38px; margin-bottom: 0;">NEXXUS</h1>
+                <h2 style="color: #ffe0d0; font-size: 26px; margin-top: 0;">FACILITY ERP</h2>
+                <hr style="border: 1px solid rgba(255,255,255,0.3); margin: 20px 0;">
+                <p style="font-size: 18px; font-weight: 500; line-height: 1.5;">Manpower Solutions.<br>Powerful Results.</p>
+            </div>
+            <div style="display: flex; justify-content: space-between; text-align: center; font-size: 14px; background: rgba(0,0,0,0.15); padding: 15px; border-radius: 10px;">
+                <div>👥<br><b>300+</b><br>Manpower</div>
+                <div>🛡️<br><b>Trusted</b><br>Partner</div>
+                <div>🤝<br><b>Commitment</b><br>to Excellence</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+  with col_right:
+    st.markdown(
+        """
+        <div style="background: white; padding: 40px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); height: 550px; display: flex; flex-direction: column; justify-content: center;">
+            <div style="text-align: center; margin-bottom: 25px;">
+                <div style="font-size: 40px; margin-bottom: 10px;">👤</div>
+                <h2 style="color: #2c3e50; margin: 0;">Welcome <span style="color: #ff7518;">Back</span></h2>
+                <p style="color: #7f8c8d; font-size: 14px; margin-top: 5px;">Sign in to continue to NEXXUS FACILITY ERP</p>
+            </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    with st.form("login_form"):
+      username = st.text_input("Username", placeholder="Username", value="admin")
+      password = st.text_input(
+          "Password", type="password", placeholder="Password"
+      )
+
+      c_sub1, c_sub2 = st.columns(2)
+      with c_sub1:
+        st.checkbox("Remember me")
+      with c_sub2:
+        st.markdown(
+            '<p style="text-align: right; font-size: 13px; margin-top: 8px;"><a'
+            ' href="#" style="color: #ff7518; text-decoration:'
+            ' none;">Forgot Password?</a></p>',
+            unsafe_allow_html=True,
+        )
+
+      login_btn = st.form_submit_button("LOGIN")
+      if login_btn:
+        if username == "admin" and password == "admin123":
+          st.session_state.logged_in = True
+          st.success("Login successful!")
+          st.rerun()
+        else:
+          st.error(
+              "Invalid Username or Password! (Default: admin / admin123)"
+          )
+
+    st.markdown(
+        """
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: #95a5a6; margin-top: 20px;">
+                <span>Version 1.0</span>
+                <span>© 2025 Nexxus Facility ERP. All Rights Reserved.</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
   st.stop()
 
 
