@@ -127,8 +127,6 @@ with tab1:
   st.subheader("📈 Operations Dashboard & Summary")
   if not st.session_state.records.empty:
     df_metrics = st.session_state.records.copy()
-
-    # Calculate numeric payout for stats
     try:
       df_metrics["Numeric_Pay"] = (
           df_metrics["System Genarated Payment"]
@@ -172,42 +170,37 @@ with tab1:
 with tab2:
   st.subheader("Add Attendance - Fast Single-Line Entry")
   with st.form("quick_entry_form"):
-    c1, c2, c3, c4, c5, c6, c7, c8, c9 = st.columns(9)
+    c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12 = st.columns(12)
 
     with c1:
       plant_in = st.selectbox(
           "Plant",
           ["Koregaon - Zepto", "Vadhu - ZEPTO", "Plant 2 - Chakan"],
-          label_visibility="collapsed",
       )
     with c2:
-      date_in = st.date_input("Date", label_visibility="collapsed")
+      date_in = st.date_input("Date")
     with c3:
-      name_in = st.text_input(
-          "Name", placeholder="Employee Name", label_visibility="collapsed"
-      )
+      shift_in = st.selectbox("Night/Shift", ["First", "Second", "Night"])
     with c4:
-      in_t = st.text_input(
-          "In", placeholder="In (e.g. 0600)", label_visibility="collapsed"
-      )
+      name_in = st.text_input("Employee Name", placeholder="Name")
     with c5:
-      out_t = st.text_input(
-          "Out", placeholder="Out (e.g. 1800)", label_visibility="collapsed"
-      )
+      contact_in = st.text_input("Contact No", placeholder="Mobile")
     with c6:
-      shift_in = st.selectbox(
-          "Shift", ["First", "Second", "Night"], label_visibility="collapsed"
-      )
+      in_t = st.text_input("In Time", placeholder="0600")
     with c7:
-      pay_type = st.selectbox(
-          "Type", ["Phone Pay", "Net Banking", "Cash"], label_visibility="collapsed"
-      )
+      out_t = st.text_input("Out Time", placeholder="1800")
     with c8:
-      remark_in = st.text_input(
-          "Remark", placeholder="Remark", label_visibility="collapsed"
-      )
+      pay_status = st.selectbox("Status", ["Pending", "Payment Done"])
     with c9:
-      submitted = st.form_submit_button("✅ Add")
+      payer_in = st.text_input("Payer", value="Vishal Hargude")
+    with c10:
+      extra_in = st.text_input("Extra", placeholder="-")
+    with c11:
+      pay_type = st.selectbox("Type", ["Phone Pay", "Net Banking", "Cash"])
+    with c12:
+      remark_in = st.text_input("Remark", placeholder="-")
+
+    submitted = st.form_submit_button("✅ Add Record")
 
     if submitted:
       if name_in:
@@ -226,18 +219,18 @@ with tab2:
             "Date": [str(date_in)],
             "Night": [shift_in],
             "Employee Name": [name_in.title()],
-            "Contact Number": ["-"],
+            "Contact Number": [contact_in if contact_in else "-"],
             "In Time": [f_in],
             "Out Time": [f_out],
             "Total Working Hours": [tot_work],
             "Extra Working Hours": [extra_work],
             "System Genarated Payment": [sys_pay],
             "Cash": [cash_val],
-            "Payment Status": ["Pending"],
-            "Payer": ["Vishal Hargude"],
-            "Extra": ["-"],
+            "Payment Status": [pay_status],
+            "Payer": [payer_in],
+            "Extra": [extra_in if extra_in else "-"],
             "Payment Type": [pay_type],
-            "Remark": [remark_in],
+            "Remark": [remark_in if remark_in else "-"],
         })
         st.session_state.records = pd.concat(
             [st.session_state.records, new_row], ignore_index=True
