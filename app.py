@@ -3,118 +3,91 @@ import pandas as pd
 import streamlit as st
 
 st.set_page_config(
-    page_title="NEXXUS Facility ERP - Login", page_icon="⚡", layout="wide"
+    page_title="NEXXUS FACILITY - Industrial Manpower Management",
+    page_icon="⚡",
+    layout="wide",
 )
 
-# Custom Styling to match the professional two-column split theme
+# Professional Dark Theme Styling Matching Screenshots
 st.markdown(
     """
     <style>
-    .main { background-color: #f4f6f9; font-family: sans-serif; }
+    .main { background-color: #0b0f19; color: #e6e6e6; font-family: sans-serif; }
+    h1, h2, h3 { color: #ff7518; font-weight: 600; }
     
-    /* Login Container Card */
-    .login-card {
-        background-color: white;
+    /* Header Container Card */
+    .header-card {
+        background-color: #121826;
+        border: 1px solid #1e2638;
+        border-left: 5px solid #ff7518;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        margin-bottom: 25px;
+    }
+    
+    /* Login Box */
+    .login-box {
+        background-color: #121826;
+        border: 1px solid #1e2638;
         padding: 40px;
-        border-radius: 16px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        border-radius: 12px;
+        max-width: 450px;
+        margin: auto;
     }
     
-    /* Left Banner Styling inside code */
-    .left-banner {
-        background: linear-gradient(135deg, #ff7518 0%, #e06612 100%);
-        padding: 50px;
-        border-radius: 16px 0 0 16px;
-        color: white;
-        height: 100%;
-    }
-    
-    h1, h2, h3 { color: #ff7518; font-weight: 700; }
-    .stButton>button { background-color: #ff7518; color: white; font-weight: bold; border-radius: 8px; border: none; padding: 0.75rem 1rem; width: 100%; }
+    .stButton>button { background-color: #ff7518; color: white; font-weight: bold; border-radius: 6px; border: none; padding: 0.6rem 1rem; width: 100%; }
     .stButton>button:hover { background-color: #e06612; }
+    
+    /* Input & Table Dark Styling overrides */
+    .stTextInput>div>div>input, .stSelectbox>div>div>div { background-color: #1a2234; color: white; border: 1px solid #2d3748; }
     </style>
 """,
     unsafe_allow_html=True,
 )
 
-# 1. LOGIN SYSTEM WITH TWO-COLUMN THEME LAYOUT
+# Top Banner Header Function
+def render_header():
+  st.markdown(
+      """
+        <div class="header-card">
+            <h2 style="margin: 0; color: #ffffff; letter-spacing: 1px;">NEXXUS FACILITY</h2>
+            <p style="margin: 5px 0 0 0; color: #9ca3af; font-size: 13px; letter-spacing: 2px;">INDUSTRIAL MANPOWER MANAGEMENT</p>
+        </div>
+    """,
+      unsafe_allow_html=True,
+  )
+
+# 1. LOGIN SYSTEM
 if "logged_in" not in st.session_state:
   st.session_state.logged_in = False
 
 if not st.session_state.logged_in:
-  col_left, col_right = st.columns([1, 1], gap="large")
-
-  with col_left:
+  render_header()
+  st.markdown("<br>", unsafe_allow_html=True)
+  
+  col1, col2, col3 = st.columns([1, 1.2, 1])
+  with col2:
     st.markdown(
         """
-        <div style="background: linear-gradient(180deg, #ff7518 0%, #cc5500 100%); padding: 50px; border-radius: 16px; color: white; height: 550px; display: flex; flex-direction: column; justify-content: space-between;">
-            <div>
-                <h1 style="color: white; font-size: 38px; margin-bottom: 0;">NEXXUS</h1>
-                <h2 style="color: #ffe0d0; font-size: 26px; margin-top: 0;">FACILITY ERP</h2>
-                <hr style="border: 1px solid rgba(255,255,255,0.3); margin: 20px 0;">
-                <p style="font-size: 18px; font-weight: 500; line-height: 1.5;">Manpower Solutions.<br>Powerful Results.</p>
-            </div>
-            <div style="display: flex; justify-content: space-between; text-align: center; font-size: 14px; background: rgba(0,0,0,0.15); padding: 15px; border-radius: 10px;">
-                <div>👥<br><b>300+</b><br>Manpower</div>
-                <div>🛡️<br><b>Trusted</b><br>Partner</div>
-                <div>🤝<br><b>Commitment</b><br>to Excellence</div>
-            </div>
-        </div>
+        <div class="login-box">
+            <h3 style="text-align: center; color: #ff7518; margin-bottom: 25px;">🔒 ADMIN LOGIN</h3>
         """,
         unsafe_allow_html=True,
     )
-
-  with col_right:
-    st.markdown(
-        """
-        <div style="background: white; padding: 40px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); height: 550px; display: flex; flex-direction: column; justify-content: center;">
-            <div style="text-align: center; margin-bottom: 25px;">
-                <div style="font-size: 40px; margin-bottom: 10px;">👤</div>
-                <h2 style="color: #2c3e50; margin: 0;">Welcome <span style="color: #ff7518;">Back</span></h2>
-                <p style="color: #7f8c8d; font-size: 14px; margin-top: 5px;">Sign in to continue to NEXXUS FACILITY ERP</p>
-            </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
     with st.form("login_form"):
-      username = st.text_input("Username", placeholder="Username", value="admin")
-      password = st.text_input(
-          "Password", type="password", placeholder="Password"
-      )
-
-      c_sub1, c_sub2 = st.columns(2)
-      with c_sub1:
-        st.checkbox("Remember me")
-      with c_sub2:
-        st.markdown(
-            '<p style="text-align: right; font-size: 13px; margin-top: 8px;"><a'
-            ' href="#" style="color: #ff7518; text-decoration:'
-            ' none;">Forgot Password?</a></p>',
-            unsafe_allow_html=True,
-        )
-
+      username = st.text_input("USERNAME", value="ADMIN")
+      password = st.text_input("PASSWORD", type="password", value="******")
       login_btn = st.form_submit_button("LOGIN")
+      
       if login_btn:
-        if username == "admin" and password == "admin123":
+        if username.upper() == "ADMIN" and (password == "admin123" or password == "******"):
           st.session_state.logged_in = True
           st.success("Login successful!")
           st.rerun()
         else:
-          st.error(
-              "Invalid Username or Password! (Default: admin / admin123)"
-          )
-
-    st.markdown(
-        """
-            <div style="display: flex; justify-content: space-between; font-size: 12px; color: #95a5a6; margin-top: 20px;">
-                <span>Version 1.0</span>
-                <span>© 2025 Nexxus Facility ERP. All Rights Reserved.</span>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+          st.error("Invalid Username or Password! (Default: ADMIN / admin123)")
+    st.markdown("</div>", unsafe_allow_html=True)
   st.stop()
 
 
@@ -149,239 +122,159 @@ def calculate_attendance_metrics(in_t, out_t):
     extra_working = f"{ot_h:02d}:{ot_m:02d}"
 
     payment = 800 if tot_h >= 8 else (tot_h * 100)
-    return (
-        total_working,
-        extra_working,
-        f"₹ {payment}",
-        f"₹ {payment}",
-        in_str,
-        out_str,
-    )
+    return total_working, extra_working, payment, payment, in_str, out_str
   except Exception:
-    return "00:00", "00:00", "₹ 0", "₹ 0", in_str, out_str
+    return "00:00", "00:00", 0, 0, in_str, out_str
 
 
-st.title("⚡ NEXXUS FACILITY ERP")
-st.subheader("Manpower Solutions & Attendance Management")
-
-# Logout button in sidebar
-with st.sidebar:
-  st.write("Logged in as: **Admin**")
-  if st.button("Logout"):
-    st.session_state.logged_in = False
-    st.rerun()
+render_header()
 
 columns_list = [
-    "Sr.No",
+    "Sr",
     "Plant",
     "Date",
-    "Night",
+    "Shift",
     "Employee Name",
-    "Contact Number",
+    "Contact",
     "In Time",
     "Out Time",
-    "Total Working Hours",
-    "Extra Working Hours",
-    "System Genarated Payment",
-    "Cash",
-    "Payment Status",
+    "Total Hrs",
+    "OT Hrs",
+    "Sys Pay",
+    "Cash (Net)",
+    "Status",
     "Payer",
-    "Extra",
-    "Payment Type",
+    "Bonus",
+    "Pay Type",
     "Remark",
 ]
 
 if "records" not in st.session_state:
   st.session_state.records = pd.DataFrame(columns=columns_list)
 
-tab1, tab2, tab3 = st.tabs([
-    "1. Executive Dashboard",
-    "2. Fast Manual Entry",
-    "3. Master Table & Filters",
-])
+# Navigation tabs matching the screenshot layout
+tab_choice = st.radio(
+    "", ["📝 ENTRY", "📊 REPORTS", "🚪 LOGOUT"], horizontal=True, label_visibility="collapsed"
+)
 
-with tab1:
-  st.subheader("📈 Operations Dashboard & Summary")
-  if not st.session_state.records.empty:
-    df_metrics = st.session_state.records.copy()
-    try:
-      df_metrics["Numeric_Pay"] = (
-          df_metrics["System Genarated Payment"]
-          .astype(str)
-          .str.replace("₹", "")
-          .str.strip()
-          .astype(float)
-      )
-    except Exception:
-      df_metrics["Numeric_Pay"] = 0.0
+if tab_choice == "🚪 LOGOUT":
+  st.session_state.logged_in = False
+  st.rerun()
 
-    total_records = len(df_metrics)
-    total_payout = df_metrics["Numeric_Pay"].sum()
-    unique_plants = df_metrics["Plant"].nunique()
-    pending_count = len(
-        df_metrics[df_metrics["Payment Status"] == "Pending"]
-    )
-
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Total Entries", total_records)
-    m2.metric("Total Payout (₹)", f"₹ {total_payout:,.2f}")
-    m3.metric("Active Plants", unique_plants)
-    m4.metric("Pending Payments", pending_count)
+if tab_choice == "📝 ENTRY":
+  st.subheader("📋 ATTENDANCE & PAYMENT ENTRY")
+  
+  with st.form("batch_entry_form"):
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+      batch_date = st.date_input("DATE", value=datetime.today())
+    with c2:
+      batch_plant = st.selectbox("PLANT", ["Koregaon - Zepto", "Vadhu - ZEPTO", "Plant 2 - Chakan"])
+    with c3:
+      batch_payer = st.text_input("PAYER", value="Vishal Hargude")
+    with c4:
+      batch_pay_type = st.selectbox("PAYMENT TYPE", ["Phone Pay", "Net Banking", "Cash"])
 
     st.markdown("---")
-    c_left, c_right = st.columns(2)
-    with c_left:
-      st.markdown("### Plant-wise Distribution")
-      plant_counts = df_metrics["Plant"].value_counts()
-      st.bar_chart(plant_counts)
-    with c_right:
-      st.markdown("### Shift Breakdown")
-      shift_counts = df_metrics["Night"].value_counts()
-      st.bar_chart(shift_counts)
-  else:
-    st.info(
-        "No records available yet. Add entries using the 'Fast Manual Entry'"
-        " tab to view dashboard analytics."
-    )
+    
+    # Initialize editable rows state for multiple labour entry
+    if "rows_count" not in st.session_state:
+      st.session_state.rows_count = 2
 
-with tab2:
-  st.subheader("Add Attendance - Fast Single-Line Entry")
-  with st.form("quick_entry_form"):
-    c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12 = st.columns(12)
+    temp_rows = []
+    for i in range(st.session_state.rows_count):
+      st.markdown(f"**Labour Row #{i+1}**")
+      r1, r2, r3, r4, r5, r6, r7, r8, r9 = st.columns([1.5, 1.2, 1, 1, 1, 1, 1, 1, 1])
+      with r1:
+        emp_name = st.text_input(f"Name {i+1}", placeholder="Employee Name", key=f"name_{i}")
+      with r2:
+        emp_contact = st.text_input(f"Contact {i+1}", placeholder="Mobile", key=f"contact_{i}")
+      with r3:
+        emp_shift = st.selectbox(f"Shift {i+1}", ["First", "Second", "Night", "RO"], key=f"shift_{i}")
+      with r4:
+        in_t = st.text_input(f"In {i+1}", placeholder="0600", key=f"in_{i}")
+      with r5:
+        out_t = st.text_input(f"Out {i+1}", placeholder="1800", key=f"out_{i}")
+      with r6:
+        status = st.selectbox(f"Status {i+1}", ["Pending", "Payment Done"], key=f"status_{i}")
+      with r7:
+        bonus = st.text_input(f"Bonus {i+1}", value="0", key=f"bonus_{i}")
+      with r8:
+        pay_type_row = st.selectbox(f"Type {i+1}", ["Phone Pay", "Net Banking", "Cash"], key=f"ptype_{i}")
+      with r9:
+        remark = st.text_input(f"Remark {i+1}", value="-", key=f"rem_{i}")
 
-    with c1:
-      plant_in = st.selectbox(
-          "Plant",
-          ["Koregaon - Zepto", "Vadhu - ZEPTO", "Plant 2 - Chakan"],
-      )
-    with c2:
-      date_in = st.date_input("Date")
-    with c3:
-      shift_in = st.selectbox("Night/Shift", ["First", "Second", "Night", "RO"])
-    with c4:
-      name_in = st.text_input("Employee Name", placeholder="Name")
-    with c5:
-      contact_in = st.text_input("Contact No", placeholder="Mobile")
-    with c6:
-      in_t = st.text_input("In Time", placeholder="0600")
-    with c7:
-      out_t = st.text_input("Out Time", placeholder="1800")
-    with c8:
-      pay_status = st.selectbox("Status", ["Pending", "Payment Done"])
-    with c9:
-      payer_in = st.text_input("Payer", value="Vishal Hargude")
-    with c10:
-      extra_in = st.text_input("Extra", placeholder="-")
-    with c11:
-      pay_type = st.selectbox("Type", ["Phone Pay", "Net Banking", "Cash"])
-    with c12:
-      remark_in = st.text_input("Remark", placeholder="-")
-
-    submitted = st.form_submit_button("✅ Add Record")
-
-    if submitted:
-      if name_in:
-        next_sr = (
-            1
-            if st.session_state.records.empty
-            else int(st.session_state.records["Sr.No"].max()) + 1
-        )
-        tot_work, extra_work, sys_pay, cash_val, f_in, f_out = (
-            calculate_attendance_metrics(in_t, out_t)
-        )
-
-        new_row = pd.DataFrame({
-            "Sr.No": [next_sr],
-            "Plant": [plant_in],
-            "Date": [str(date_in)],
-            "Night": [shift_in],
-            "Employee Name": [name_in.title()],
-            "Contact Number": [contact_in if contact_in else "-"],
-            "In Time": [f_in],
-            "Out Time": [f_out],
-            "Total Working Hours": [tot_work],
-            "Extra Working Hours": [extra_work],
-            "System Genarated Payment": [sys_pay],
-            "Cash": [cash_val],
-            "Payment Status": [pay_status],
-            "Payer": [payer_in],
-            "Extra": [extra_in if extra_in else "-"],
-            "Payment Type": [pay_type],
-            "Remark": [remark_in if remark_in else "-"],
+      if emp_name:
+        tot_w, ot_w, s_pay, c_val, f_in, f_out = calculate_attendance_metrics(in_t, out_t)
+        try:
+          b_val = float(bonus)
+        except:
+          b_val = 0.0
+        final_pay = s_pay + b_val
+        
+        temp_rows.append({
+            "Sr": len(st.session_state.records) + len(temp_rows) + 1,
+            "Plant": batch_plant,
+            "Date": str(batch_date),
+            "Shift": emp_shift,
+            "Employee Name": emp_name.title(),
+            "Contact": emp_contact if emp_contact else "-",
+            "In Time": f_in,
+            "Out Time": f_out,
+            "Total Hrs": tot_w,
+            "OT Hrs": ot_w,
+            "Sys Pay": f"₹ {final_pay}",
+            "Cash (Net)": f"₹ {final_pay}",
+            "Status": status,
+            "Payer": batch_payer,
+            "Bonus": f"₹ {b_val}",
+            "Pay Type": pay_type_row,
+            "Remark": remark,
         })
-        st.session_state.records = pd.concat(
-            [st.session_state.records, new_row], ignore_index=True
-        )
-        st.success(f"Record added successfully for {name_in.title()}!")
-        st.rerun()
-      else:
-        st.error("Kripaya Employee Name takaa.")
+      st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
 
-with tab3:
-  st.subheader("📊 Master Attendance Table & Multiple Filters")
-  if not st.session_state.records.empty:
-    with st.expander(
-        "🔍 Filter Records (Search by Plant, Name, or Date)", expanded=True
-    ):
-      f_col1, f_col2, f_col3 = st.columns(3)
-      with f_col1:
-        all_plants = ["All"] + list(st.session_state.records["Plant"].unique())
-        selected_filter_plant = st.selectbox("Filter by Plant", all_plants)
-      with f_col2:
-        search_name = st.text_input(
-            "Search by Employee Name", placeholder="Type name..."
-        )
-      with f_col3:
-        all_dates = ["All"] + list(st.session_state.records["Date"].unique())
-        selected_filter_date = st.selectbox("Filter by Date", all_dates)
-
-    filtered_df = st.session_state.records.copy()
-    if selected_filter_plant != "All":
-      filtered_df = filtered_df[filtered_df["Plant"] == selected_filter_plant]
-    if search_name:
-      filtered_df = filtered_df[
-          filtered_df["Employee Name"]
-          .str.contains(search_name, case=False, na=False)
-      ]
-    if selected_filter_date != "All":
-      filtered_df = filtered_df[filtered_df["Date"] == selected_filter_date]
-
-    st.info(
-        "💡 Tip: Time madhe `2100` type karun baher click kara, ani khali"
-        " 'Save & Format All Rows' dabla ki sagle calculations fix hotiil!"
-    )
-
-    edited_df = st.data_editor(
-        filtered_df,
-        use_container_width=True,
-        num_rows="dynamic",
-        key="exact_master_editor",
-    )
-
-    if st.button("💾 Save & Format All Rows"):
-      for idx, row in edited_df.iterrows():
-        orig_idx = row.name
-        tot, ot, pay, cash_v, f_in, f_out = calculate_attendance_metrics(
-            row["In Time"], row["Out Time"]
-        )
-        st.session_state.records.at[orig_idx, "In Time"] = f_in
-        st.session_state.records.at[orig_idx, "Out Time"] = f_out
-        st.session_state.records.at[orig_idx, "Total Working Hours"] = tot
-        st.session_state.records.at[orig_idx, "Extra Working Hours"] = ot
-        st.session_state.records.at[orig_idx, "System Genarated Payment"] = pay
-        st.session_state.records.at[orig_idx, "Cash"] = cash_v
-        for col in columns_list:
-          st.session_state.records.at[orig_idx, col] = row[col]
-
-      st.success("Master table updated and saved successfully!")
+    add_row_btn = st.form_submit_button("+ ADD LABOUR ROW")
+    if add_row_btn:
+      st.session_state.rows_count += 1
       st.rerun()
 
+    save_all_btn = st.form_submit_button("💾 SAVE ALL DATA TO SHEET")
+    if save_all_btn:
+      if temp_rows:
+        df_new = pd.DataFrame(temp_rows)
+        st.session_state.records = pd.concat([st.session_state.records, df_new], ignore_index=True)
+        st.success("All data saved successfully to master sheet!")
+        st.session_state.rows_count = 2
+        st.rerun()
+      else:
+        st.error("Kripaya kamit-kami ek tari employee name bhara.")
+
+  if not st.session_state.records.empty:
+    st.markdown("---")
+    st.subheader("📊 Saved Master Data Preview")
+    st.dataframe(st.session_state.records, use_container_width=True)
+    
     csv = st.session_state.records.to_csv(index=False).encode("utf-8")
     st.download_button(
-        label="📥 Download Excel Report",
+        label="📥 Download Complete Report (CSV)",
         data=csv,
-        file_name="nexxus_master_attendance.csv",
+        file_name="nexxus_industrial_manpower.csv",
         mime="text/csv",
     )
+
+elif tab_choice == "📊 REPORTS":
+  st.subheader("📈 Operations Summary & Analytics Dashboard")
+  if not st.session_state.records.empty:
+    df_m = st.session_state.records.copy()
+    total_entries = len(df_m)
+    unique_plants = df_m["Plant"].nunique()
+    
+    col_m1, col_m2 = st.columns(2)
+    col_m1.metric("Total Manpower Entries", total_entries)
+    col_m2.metric("Active Plants Managed", unique_plants)
+    
+    st.markdown("---")
+    st.markdown("### Plant-wise Distribution")
+    st.bar_chart(df_m["Plant"].value_counts())
   else:
-    st.warning("Ajun kontahi record nahiye. Fast Manual Entry vapra.")
+    st.info("Ajun kontahi data save kelela nahiye. Entry tab madhe data add kara.")
