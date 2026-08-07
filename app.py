@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
+import io
 import google.generativeai as genai
+from PIL import Image
 import pandas as pd
 import streamlit as st
 
@@ -183,10 +185,11 @@ with tab2:
     if st.button("🤖 Read Handwriting & Extract Attendance"):
       with st.spinner("AI is reading the register handwriting... Please wait."):
         try:
-          image_bytes = uploaded_photo.getvalue()
+          # Fixed Image Conversion for Gemini Vision API
+          image = Image.open(uploaded_photo)
           model = genai.GenerativeModel("gemini-1.5-flash")
           response = model.generate_content([
-              image_bytes,
+              image,
               "Extract attendance details from this register image. List employee"
               " names, in-time, and out-time if visible. Return as a clean"
               " comma-separated list of Name | InTime | OutTime.",
