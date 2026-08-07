@@ -1,6 +1,4 @@
 from datetime import datetime, timedelta
-import google.generativeai as genai
-from PIL import Image
 import pandas as pd
 import streamlit as st
 
@@ -22,7 +20,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 1. SIMPLE LOGIN SYSTEM
+# 1. LOGIN SYSTEM
 if "logged_in" not in st.session_state:
   st.session_state.logged_in = False
 
@@ -41,12 +39,6 @@ if not st.session_state.logged_in:
       else:
         st.error("Invalid Username or Password! (Default: admin / admin123)")
   st.stop()
-
-# Configure Gemini AI (Make sure to configure key in Streamlit secrets or use fallback)
-try:
-  genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-except Exception:
-  genai.configure(api_key="AIzaSyYourValidApiKeyHere")
 
 
 def format_time(time_val):
@@ -97,7 +89,7 @@ st.subheader("Manpower Solutions & Attendance Management")
 
 # Logout button in sidebar
 with st.sidebar:
-  st.write(f"Logged in as: **Admin**")
+  st.write("Logged in as: **Admin**")
   if st.button("Logout"):
     st.session_state.logged_in = False
     st.rerun()
@@ -126,185 +118,141 @@ if "records" not in st.session_state:
   st.session_state.records = pd.DataFrame(columns=columns_list)
 
 tab1, tab2, tab3 = st.tabs([
-    "1. Manual Entry",
-    "2. AI Handwriting Register Reader",
+    "1. Executive Dashboard",
+    "2. Fast Manual Entry",
     "3. Master Table & Filters",
 ])
 
 with tab1:
-  st.subheader("Add Individual Attendance Record")
-  with st.form("attendance_form"):
-    col1, col2, col3 = st.columns(3)
-    with col1:
-      plants = ["Koregaon - Zepto", "Vadhu - ZEPTO", "Plant 2 - Chakan"]
-      selected_plant = st.selectbox("Plant", plants)
-      emp_name = st.text_input("Employee Name").title()
-    with col2:
-      attendance_date = st.date_input("Date")
-      night_shift = st.selectbox("Night (Shift)", ["First", "Second", "Night"])
-    with col3:
-      contact_no = st.text_input("Contact Number", "-")
-      payer = st.text_input("Payer", "Vishal Hargude")
+  st.subheader("📈 Operations Dashboard & Summary")
+  if not st.session_state.records.empty:
+    df_metrics = st.session_state.records.copy()
 
-    col4, col5, col6 = st.columns(3)
-    with col4:
-      in_time = st.text_input("In Time (e.g. 0653 or 2100)", "06:53")
-    with col5:
-      out_time = st.text_input("Out Time (e.g. 1905)", "19:05")
-    with col6:
-      payment_type = st.selectbox(
-          "Payment Type", ["Phone Pay", "Net Banking", "Cash"]
+    # Calculate numeric payout for stats
+    try:
+      df_metrics["Numeric_Pay"] = (
+          df_metrics["System Genarated Payment"]
+          .astype(str)
+          .str.replace("₹", "")
+          .str.strip()
+          .astype(float)
       )
+    except Exception:
+      df_metrics["Numeric_Pay"] = 0.0
 
-    col7, col8, col9 = st.columns(3)
-    with col7:
-      payment_status = st.selectbox(
-          "Payment Status", ["Payment Done", "Pending"]
+    total_records = len(df_metrics)
+    total_payout = df_metrics["Numeric_Pay"].sum()
+    unique_plants = df_metrics["Plant"].nunique()
+    pending_count = len(
+        df_metrics[df_metrics["Payment Status"] == "Pending"]
+    )
+
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Total Entries", total_records)
+    m2.metric("Total Payout (₹)", f"₹ {total_payout:,.2f}")
+    m3.metric("Active Plants", unique_plants)
+    m4.metric("Pending Payments", pending_count)
+
+    st.markdown("---")
+    c_left, c_right = st.columns(2)
+    with c_left:
+      st.markdown("### Plant-wise Distribution")
+      plant_counts = df_metrics["Plant"].value_counts()
+      st.bar_chart(plant_counts)
+    with c_right:
+      st.markdown("### Shift Breakdown")
+      shift_counts = df_metrics["Night"].value_counts()
+      st.bar_chart(shift_counts)
+  else:
+    st.info(
+        "No records available yet. Add entries using the 'Fast Manual Entry'"
+        " tab to view dashboard analytics."
+    )
+
+with tab2:
+  st.subheader("Add Attendance - Fast Single-Line Entry")
+  with st.form("quick_entry_form"):
+    c1, c2, c3, c4, c5, c6, c7, c8, c9 = st.columns(9)
+
+    with c1:
+      plant_in = st.selectbox(
+          "Plant",
+          ["Koregaon - Zepto", "Vadhu - ZEPTO", "Plant 2 - Chakan"],
+          label_visibility="collapsed",
       )
-    with col8:
-      extra = st.text_input("Extra / Bonus", "-")
-    with col9:
-      remark = st.text_input("Remark", "-")
+    with c2:
+      date_in = st.date_input("Date", label_visibility="collapsed")
+    with c3:
+      name_in = st.text_input(
+          "Name", placeholder="Employee Name", label_visibility="collapsed"
+      )
+    with c4:
+      in_t = st.text_input(
+          "In", placeholder="In (e.g. 0600)", label_visibility="collapsed"
+      )
+    with c5:
+      out_t = st.text_input(
+          "Out", placeholder="Out (e.g. 1800)", label_visibility="collapsed"
+      )
+    with c6:
+      shift_in = st.selectbox(
+          "Shift", ["First", "Second", "Night"], label_visibility="collapsed"
+      )
+    with c7:
+      pay_type = st.selectbox(
+          "Type", ["Phone Pay", "Net Banking", "Cash"], label_visibility="collapsed"
+      )
+    with c8:
+      remark_in = st.text_input(
+          "Remark", placeholder="Remark", label_visibility="collapsed"
+      )
+    with c9:
+      submitted = st.form_submit_button("✅ Add")
 
-    submitted = st.form_submit_button("Add to Master Table")
     if submitted:
-      if emp_name:
+      if name_in:
         next_sr = (
             1
             if st.session_state.records.empty
             else int(st.session_state.records["Sr.No"].max()) + 1
         )
         tot_work, extra_work, sys_pay, cash_val, f_in, f_out = (
-            calculate_attendance_metrics(in_time, out_time)
+            calculate_attendance_metrics(in_t, out_t)
         )
 
         new_row = pd.DataFrame({
             "Sr.No": [next_sr],
-            "Plant": [selected_plant],
-            "Date": [str(attendance_date)],
-            "Night": [night_shift],
-            "Employee Name": [emp_name],
-            "Contact Number": [contact_no],
+            "Plant": [plant_in],
+            "Date": [str(date_in)],
+            "Night": [shift_in],
+            "Employee Name": [name_in.title()],
+            "Contact Number": ["-"],
             "In Time": [f_in],
             "Out Time": [f_out],
             "Total Working Hours": [tot_work],
             "Extra Working Hours": [extra_work],
             "System Genarated Payment": [sys_pay],
             "Cash": [cash_val],
-            "Payment Status": [payment_status],
-            "Payer": [payer],
-            "Extra": [extra],
-            "Payment Type": [payment_type],
-            "Remark": [remark],
+            "Payment Status": ["Pending"],
+            "Payer": ["Vishal Hargude"],
+            "Extra": ["-"],
+            "Payment Type": [pay_type],
+            "Remark": [remark_in],
         })
         st.session_state.records = pd.concat(
             [st.session_state.records, new_row], ignore_index=True
         )
-        st.success(f"Record added successfully for {emp_name}!")
+        st.success(f"Record added successfully for {name_in.title()}!")
+        st.rerun()
       else:
         st.error("Kripaya Employee Name takaa.")
-
-with tab2:
-  st.subheader("📸 AI Handwriting Register Reader (Photo / Screenshot)")
-  st.info(
-      "Registercha photo kinva screenshot upload kara. AI tyatil data"
-      " automatically wachun master table madhe add karel!"
-  )
-  uploaded_photo = st.file_uploader(
-      "Upload Register Page Photo / Screenshot", type=["jpg", "png", "jpeg"]
-  )
-
-  if uploaded_photo is not None:
-    st.image(uploaded_photo, caption="Uploaded Register Reference", width=500)
-    default_plant = st.selectbox(
-        "Plant Name for this batch",
-        ["Koregaon - Zepto", "Vadhu - ZEPTO", "Plant 2 - Chakan"],
-        key="ai_plant",
-    )
-    batch_date = st.date_input("Date for this Batch", key="ai_date")
-    night_shift_ai = st.selectbox(
-        "Shift for this Batch", ["First", "Second", "Night"], key="ai_night"
-    )
-
-    if st.button("🤖 Read Handwriting & Auto-Fill Records"):
-      with st.spinner("AI is reading the image and updating records..."):
-        try:
-          image = Image.open(uploaded_photo)
-          model = genai.GenerativeModel("gemini-1.5-flash")
-          prompt = (
-              "Extract all employee attendance rows from this register image."
-              " Return ONLY a list where each line represents one employee in"
-              " the exact format: EmployeeName | InTime | OutTime. Do not"
-              " include any extra markdown or text, just the lines."
-          )
-          response = model.generate_content([image, prompt])
-
-          extracted_text = response.text.strip()
-          lines = extracted_text.split("\n")
-
-          added_count = 0
-          for line in lines:
-            if "|" in line:
-              parts = [p.strip() for p in line.split("|")]
-              if len(parts) >= 3:
-                e_name, raw_in, raw_out = (
-                    parts[0].title(),
-                    parts[1],
-                    parts[2],
-                )
-
-                next_sr = (
-                    1
-                    if st.session_state.records.empty
-                    else int(st.session_state.records["Sr.No"].max()) + 1
-                )
-                tot_work, extra_work, sys_pay, cash_val, f_in, f_out = (
-                    calculate_attendance_metrics(raw_in, raw_out)
-                )
-
-                new_row = pd.DataFrame({
-                    "Sr.No": [next_sr],
-                    "Plant": [default_plant],
-                    "Date": [str(batch_date)],
-                    "Night": [night_shift_ai],
-                    "Employee Name": [e_name],
-                    "Contact Number": ["-"],
-                    "In Time": [f_in],
-                    "Out Time": [f_out],
-                    "Total Working Hours": [tot_work],
-                    "Extra Working Hours": [extra_work],
-                    "System Genarated Payment": [sys_pay],
-                    "Cash": [cash_val],
-                    "Payment Status": ["Pending"],
-                    "Payer": ["Vishal Hargude"],
-                    "Extra": ["-"],
-                    "Payment Type": ["Phone Pay"],
-                    "Remark": ["-"],
-                })
-                st.session_state.records = pd.concat(
-                    [st.session_state.records, new_row], ignore_index=True
-                )
-                added_count += 1
-
-          if added_count > 0:
-            st.success(
-                f"Successfully extracted and added {added_count} records"
-                " automatically!"
-            )
-            st.rerun()
-          else:
-            st.warning(
-                "AI could not parse rows automatically. Raw output:"
-                f" {extracted_text}"
-            )
-        except Exception as e:
-          st.error(f"AI Processing Error: {e}")
 
 with tab3:
   st.subheader("📊 Master Attendance Table & Multiple Filters")
   if not st.session_state.records.empty:
-    # 3. MULTIPLE FILTERS (Date, Name, Plant)
-    with st.expander("🔍 Filter Records (Search by Plant, Name, or Date)", expanded=True):
+    with st.expander(
+        "🔍 Filter Records (Search by Plant, Name, or Date)", expanded=True
+    ):
       f_col1, f_col2, f_col3 = st.columns(3)
       with f_col1:
         all_plants = ["All"] + list(st.session_state.records["Plant"].unique())
@@ -317,7 +265,6 @@ with tab3:
         all_dates = ["All"] + list(st.session_state.records["Date"].unique())
         selected_filter_date = st.selectbox("Filter by Date", all_dates)
 
-    # Apply filters
     filtered_df = st.session_state.records.copy()
     if selected_filter_plant != "All":
       filtered_df = filtered_df[filtered_df["Plant"] == selected_filter_plant]
@@ -342,7 +289,6 @@ with tab3:
     )
 
     if st.button("💾 Save & Format All Rows"):
-      # Update back to main session state records
       for idx, row in edited_df.iterrows():
         orig_idx = row.name
         tot, ot, pay, cash_v, f_in, f_out = calculate_attendance_metrics(
@@ -354,7 +300,6 @@ with tab3:
         st.session_state.records.at[orig_idx, "Extra Working Hours"] = ot
         st.session_state.records.at[orig_idx, "System Genarated Payment"] = pay
         st.session_state.records.at[orig_idx, "Cash"] = cash_v
-        # Update other edited fields
         for col in columns_list:
           st.session_state.records.at[orig_idx, col] = row[col]
 
@@ -369,4 +314,4 @@ with tab3:
         mime="text/csv",
     )
   else:
-    st.warning("Ajun kontahi record nahiye. Manual Entry kinva AI Reader vapra.")
+    st.warning("Ajun kontahi record nahiye. Fast Manual Entry vapra.")
