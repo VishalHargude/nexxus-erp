@@ -56,7 +56,14 @@ def calculate_attendance_metrics(in_t, out_t):
     extra_working = f"{ot_h:02d}:{ot_m:02d}"
 
     payment = 800 if tot_h >= 8 else (tot_h * 100)
-    return total_working, extra_working, f"₹ {payment}", f"₹ {payment}", in_str, out_str
+    return (
+        total_working,
+        extra_working,
+        f"₹ {payment}",
+        f"₹ {payment}",
+        in_str,
+        out_str,
+    )
   except Exception:
     return "00:00", "00:00", "₹ 0", "₹ 0", in_str, out_str
 
@@ -188,6 +195,7 @@ with tab2:
       with st.spinner("AI is reading the register handwriting... Please wait."):
         try:
           image = Image.open(uploaded_photo)
+          # Updated to stable model name
           model = genai.GenerativeModel("gemini-1.5-flash")
           response = model.generate_content([
               image,
