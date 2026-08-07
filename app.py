@@ -22,8 +22,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Direct API Key Configuration
-genai.configure(api_key="AQ.Ab8RN6IrcGqLSZLW_A8-ca1JECRLjXqcHl4oqYgkLEt6H2Bbqw")
+# Direct API Key Configuration (Ensure it starts with AIza...)
+genai.configure(api_key="AIzaSyYourValidApiKeyHere")
 
 
 def format_time(time_val):
@@ -177,7 +177,7 @@ with tab2:
   st.subheader("📸 AI Handwriting Register Reader")
   st.info(
       "Registercha photo upload kara. AI tyatil handwriting wachun patkan"
-      " rows tayar karel!"
+      " master table madhe rows update karel!"
   )
   uploaded_photo = st.file_uploader(
       "Upload Register Page Photo", type=["jpg", "png", "jpeg"]
@@ -190,52 +190,84 @@ with tab2:
         ["Koregaon - Zepto", "Vadhu - ZEPTO", "Plant 2 - Chakan"],
         key="ai_plant",
     )
+    batch_date = st.date_input("Date for this Batch", key="ai_date")
+    night_shift_ai = st.selectbox(
+        "Shift for this Batch", ["First", "Second", "Night"], key="ai_night"
+    )
 
-    if st.button("🤖 Read Handwriting & Extract Attendance"):
-      with st.spinner("AI is reading the register handwriting... Please wait."):
+    if st.button("🤖 Read Handwriting & Update Master Table"):
+      with st.spinner(
+          "AI is reading the register handwriting and updating records..."
+      ):
         try:
           image = Image.open(uploaded_photo)
-          # Updated to stable model name
           model = genai.GenerativeModel("gemini-1.5-flash")
-          response = model.generate_content([
-              image,
-              "Extract attendance details from this register image. List employee"
-              " names, in-time, and out-time if visible. Return as a clean"
-              " comma-separated list of Name | InTime | OutTime.",
-          ])
-
-          extracted_text = response.text
-          st.success("Handwriting read successfully by AI!")
-          st.write(extracted_text)
-
-          start_sr = (
-              1
-              if st.session_state.records.empty
-              else int(st.session_state.records["Sr.No"].max()) + 1
+          prompt = (
+              "Extract all employee attendance rows from this register image."
+              " Return ONLY a list where each line represents one employee in"
+              " the exact format: EmployeeName | InTime | OutTime. Do not"
+              " include any extra markdown or text, just the lines."
           )
-          sample_row = pd.DataFrame({
-              "Sr.No": [start_sr],
-              "Plant": [default_plant],
-              "Date": ["18-Jul-26"],
-              "Night": ["First"],
-              "Employee Name": ["Extracted Employee"],
-              "Contact Number": ["-"],
-              "In Time": ["06:53"],
-              "Out Time": ["19:05"],
-              "Total Working Hours": ["12:12"],
-              "Extra Working Hours": ["04:12"],
-              "System Genarated Payment": ["₹ 800"],
-              "Cash": ["₹ 800"],
-              "Payment Status": ["Payment Done"],
-              "Payer": ["Vishal Hargude"],
-              "Extra": ["-"],
-              "Payment Type": ["Phone Pay"],
-              "Remark": ["-"],
-          })
-          st.session_state.records = pd.concat(
-              [st.session_state.records, sample_row], ignore_index=True
-          )
-          st.rerun()
+          response = model.generate_content([image, prompt])
+
+          extracted_text = response.text.strip()
+          lines = extracted_text.split("\n")
+
+          added_count = 0
+          for line in lines:
+            if "|" in line:
+              parts = [p.strip() for p in line.split("|")]
+              if len(parts) >= 3:
+                e_name, raw_in, raw_out = (
+                    parts[0].title(),
+                    parts[1],
+                    parts[2],
+                )
+
+                next_sr = (
+                    1
+                    if st.session_state.records.empty
+                    else int(st.session_state.records["Sr.No"].max()) + 1
+                )
+                tot_work, extra_work, sys_pay, cash_val, f_in, f_out = (
+                    calculate_attendance_metrics(raw_in, raw_out)
+                )
+
+                new_row = pd.DataFrame({
+                    "Sr.No": [next_sr],
+                    "Plant": [default_plant],
+                    "Date": [str(batch_date)],
+                    "Night": [night_shift_ai],
+                    "Employee Name": [e_name],
+                    "Contact Number": ["-"],
+                    "In Time": [f_in],
+                    "Out Time": [f_out],
+                    "Total Working Hours": [tot_work],
+                    "Extra Working Hours": [extra_work],
+                    "System Genarated Payment": [sys_pay],
+                    "Cash": [cash_val],
+                    "Payment Status": ["Pending"],
+                    "Payer": ["Vishal Hargude"],
+                    "Extra": ["-"],
+                    "Payment Type": ["Phone Pay"],
+                    "Remark": ["-"],
+                })
+                st.session_state.records = pd.concat(
+                    [st.session_state.records, new_row], ignore_index=True
+                )
+                added_count += 1
+
+          if added_count > 0:
+            st.success(
+                f"Successfully extracted and added {added_count} records"
+                " starting from Serial No. 1!"
+            )
+            st.rerun()
+          else:
+            st.warning(
+                "AI could not parse rows automatically. Raw output:"
+                f" {extracted_text}"
+            )
         except Exception as e:
           st.error(f"AI Processing Error: {e}")
 
