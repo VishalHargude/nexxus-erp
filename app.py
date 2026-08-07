@@ -22,8 +22,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Direct API Key Configuration (Ensure it starts with AIza...)
-genai.configure(api_key="AIzaSyYourValidApiKeyHere")
+# Configured with your active Gemini API Key
+genai.configure(api_key="AQ.Ab8RN6KQQNzgvFwzN1ZTQvCyDRyJLrLSqInSLrc_u6_q2zJjsA")
 
 
 def format_time(time_val):
