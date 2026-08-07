@@ -22,6 +22,9 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# Direct API Key Configuration
+genai.configure(api_key="AQ.Ab8RN6IrcGqLSZLW_A8-ca1JECRLjXqcHl4oqYgkLEt6H2Bbqw")
+
 
 def format_time(time_val):
   t_str = str(time_val).strip().replace(":", "").replace(".", "")
@@ -184,19 +187,6 @@ with tab2:
     if st.button("🤖 Read Handwriting & Extract Attendance"):
       with st.spinner("AI is reading the register handwriting... Please wait."):
         try:
-          # Secure API key handling for Streamlit Cloud or fallback
-          api_key = None
-          try:
-            api_key = st.secrets["GOOGLE_API_KEY"]
-          except Exception:
-            pass
-
-          if api_key:
-            genai.configure(api_key=api_key)
-          else:
-            # Tu ithe direct pan apali key taku shakshos jar secrets nasetar
-            genai.configure(api_key="TUJHI_API_KEY_ITHE_TAKA")
-
           image = Image.open(uploaded_photo)
           model = genai.GenerativeModel("gemini-1.5-flash")
           response = model.generate_content([
@@ -239,10 +229,7 @@ with tab2:
           )
           st.rerun()
         except Exception as e:
-          st.error(
-              f"AI Processing Error: {e}. Kripaya Streamlit Secrets madhe"
-              " GOOGLE_API_KEY set keli ahe ka te check kara."
-          )
+          st.error(f"AI Processing Error: {e}")
 
 with tab3:
   st.subheader("📊 Master Attendance Table")
