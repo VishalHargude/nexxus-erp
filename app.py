@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-import io
 import google.generativeai as genai
 from PIL import Image
 import pandas as pd
@@ -185,7 +184,19 @@ with tab2:
     if st.button("🤖 Read Handwriting & Extract Attendance"):
       with st.spinner("AI is reading the register handwriting... Please wait."):
         try:
-          # Fixed Image Conversion for Gemini Vision API
+          # Secure API key handling for Streamlit Cloud or fallback
+          api_key = None
+          try:
+            api_key = st.secrets["GOOGLE_API_KEY"]
+          except Exception:
+            pass
+
+          if api_key:
+            genai.configure(api_key=api_key)
+          else:
+            # Tu ithe direct pan apali key taku shakshos jar secrets nasetar
+            genai.configure(api_key="TUJHI_API_KEY_ITHE_TAKA")
+
           image = Image.open(uploaded_photo)
           model = genai.GenerativeModel("gemini-1.5-flash")
           response = model.generate_content([
@@ -228,7 +239,10 @@ with tab2:
           )
           st.rerun()
         except Exception as e:
-          st.error(f"Could not process image automatically. Error: {e}")
+          st.error(
+              f"AI Processing Error: {e}. Kripaya Streamlit Secrets madhe"
+              " GOOGLE_API_KEY set keli ahe ka te check kara."
+          )
 
 with tab3:
   st.subheader("📊 Master Attendance Table")
