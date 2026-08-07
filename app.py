@@ -22,8 +22,31 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Configured with your active Gemini API Key
-genai.configure(api_key="AQ.Ab8RN6KQQNzgvFwzN1ZTQvCyDRyJLrLSqInSLrc_u6_q2zJjsA")
+# 1. SIMPLE LOGIN SYSTEM
+if "logged_in" not in st.session_state:
+  st.session_state.logged_in = False
+
+if not st.session_state.logged_in:
+  st.title("⚡ NEXXUS FACILITY ERP - Login")
+  st.subheader("Please login to access manpower records")
+  with st.form("login_form"):
+    username = st.text_input("Username", value="admin")
+    password = st.text_input("Password", type="password")
+    login_btn = st.form_submit_button("Login")
+    if login_btn:
+      if username == "admin" and password == "admin123":
+        st.session_state.logged_in = True
+        st.success("Login successful!")
+        st.rerun()
+      else:
+        st.error("Invalid Username or Password! (Default: admin / admin123)")
+  st.stop()
+
+# Configure Gemini AI (Make sure to configure key in Streamlit secrets or use fallback)
+try:
+  genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+except Exception:
+  genai.configure(api_key="AIzaSyYourValidApiKeyHere")
 
 
 def format_time(time_val):
@@ -33,6 +56,7 @@ def format_time(time_val):
   return str(time_val).strip()
 
 
+# 2. AUTO-FILL CALCULATIONS BASED ON IN/OUT TIME
 def calculate_attendance_metrics(in_t, out_t):
   in_str = format_time(in_t)
   out_str = format_time(out_t)
@@ -71,6 +95,13 @@ def calculate_attendance_metrics(in_t, out_t):
 st.title("⚡ NEXXUS FACILITY ERP")
 st.subheader("Manpower Solutions & Attendance Management")
 
+# Logout button in sidebar
+with st.sidebar:
+  st.write(f"Logged in as: **Admin**")
+  if st.button("Logout"):
+    st.session_state.logged_in = False
+    st.rerun()
+
 columns_list = [
     "Sr.No",
     "Plant",
@@ -97,7 +128,7 @@ if "records" not in st.session_state:
 tab1, tab2, tab3 = st.tabs([
     "1. Manual Entry",
     "2. AI Handwriting Register Reader",
-    "3. Master Table & Smooth Editing",
+    "3. Master Table & Filters",
 ])
 
 with tab1:
@@ -174,13 +205,13 @@ with tab1:
         st.error("Kripaya Employee Name takaa.")
 
 with tab2:
-  st.subheader("📸 AI Handwriting Register Reader")
+  st.subheader("📸 AI Handwriting Register Reader (Photo / Screenshot)")
   st.info(
-      "Registercha photo upload kara. AI tyatil handwriting wachun patkan"
-      " master table madhe rows update karel!"
+      "Registercha photo kinva screenshot upload kara. AI tyatil data"
+      " automatically wachun master table madhe add karel!"
   )
   uploaded_photo = st.file_uploader(
-      "Upload Register Page Photo", type=["jpg", "png", "jpeg"]
+      "Upload Register Page Photo / Screenshot", type=["jpg", "png", "jpeg"]
   )
 
   if uploaded_photo is not None:
@@ -195,10 +226,8 @@ with tab2:
         "Shift for this Batch", ["First", "Second", "Night"], key="ai_night"
     )
 
-    if st.button("🤖 Read Handwriting & Update Master Table"):
-      with st.spinner(
-          "AI is reading the register handwriting and updating records..."
-      ):
+    if st.button("🤖 Read Handwriting & Auto-Fill Records"):
+      with st.spinner("AI is reading the image and updating records..."):
         try:
           image = Image.open(uploaded_photo)
           model = genai.GenerativeModel("gemini-1.5-flash")
@@ -260,7 +289,7 @@ with tab2:
           if added_count > 0:
             st.success(
                 f"Successfully extracted and added {added_count} records"
-                " starting from Serial No. 1!"
+                " automatically!"
             )
             st.rerun()
           else:
@@ -272,35 +301,64 @@ with tab2:
           st.error(f"AI Processing Error: {e}")
 
 with tab3:
-  st.subheader("📊 Master Attendance Table")
+  st.subheader("📊 Master Attendance Table & Multiple Filters")
   if not st.session_state.records.empty:
+    # 3. MULTIPLE FILTERS (Date, Name, Plant)
+    with st.expander("🔍 Filter Records (Search by Plant, Name, or Date)", expanded=True):
+      f_col1, f_col2, f_col3 = st.columns(3)
+      with f_col1:
+        all_plants = ["All"] + list(st.session_state.records["Plant"].unique())
+        selected_filter_plant = st.selectbox("Filter by Plant", all_plants)
+      with f_col2:
+        search_name = st.text_input(
+            "Search by Employee Name", placeholder="Type name..."
+        )
+      with f_col3:
+        all_dates = ["All"] + list(st.session_state.records["Date"].unique())
+        selected_filter_date = st.selectbox("Filter by Date", all_dates)
+
+    # Apply filters
+    filtered_df = st.session_state.records.copy()
+    if selected_filter_plant != "All":
+      filtered_df = filtered_df[filtered_df["Plant"] == selected_filter_plant]
+    if search_name:
+      filtered_df = filtered_df[
+          filtered_df["Employee Name"]
+          .str.contains(search_name, case=False, na=False)
+      ]
+    if selected_filter_date != "All":
+      filtered_df = filtered_df[filtered_df["Date"] == selected_filter_date]
+
     st.info(
         "💡 Tip: Time madhe `2100` type karun baher click kara, ani khali"
-        " 'Save & Format All Rows' dabla ki sagle serial numbers, calculations"
-        " ani formats barobar fix hotiil!"
+        " 'Save & Format All Rows' dabla ki sagle calculations fix hotiil!"
     )
 
     edited_df = st.data_editor(
-        st.session_state.records,
+        filtered_df,
         use_container_width=True,
         num_rows="dynamic",
         key="exact_master_editor",
     )
 
     if st.button("💾 Save & Format All Rows"):
+      # Update back to main session state records
       for idx, row in edited_df.iterrows():
+        orig_idx = row.name
         tot, ot, pay, cash_v, f_in, f_out = calculate_attendance_metrics(
             row["In Time"], row["Out Time"]
         )
-        edited_df.at[idx, "In Time"] = f_in
-        edited_df.at[idx, "Out Time"] = f_out
-        edited_df.at[idx, "Total Working Hours"] = tot
-        edited_df.at[idx, "Extra Working Hours"] = ot
-        edited_df.at[idx, "System Genarated Payment"] = pay
-        edited_df.at[idx, "Cash"] = cash_v
+        st.session_state.records.at[orig_idx, "In Time"] = f_in
+        st.session_state.records.at[orig_idx, "Out Time"] = f_out
+        st.session_state.records.at[orig_idx, "Total Working Hours"] = tot
+        st.session_state.records.at[orig_idx, "Extra Working Hours"] = ot
+        st.session_state.records.at[orig_idx, "System Genarated Payment"] = pay
+        st.session_state.records.at[orig_idx, "Cash"] = cash_v
+        # Update other edited fields
+        for col in columns_list:
+          st.session_state.records.at[orig_idx, col] = row[col]
 
-      st.session_state.records = edited_df
-      st.success("Master table updated successfully starting from Serial No. 1!")
+      st.success("Master table updated and saved successfully!")
       st.rerun()
 
     csv = st.session_state.records.to_csv(index=False).encode("utf-8")
@@ -311,4 +369,4 @@ with tab3:
         mime="text/csv",
     )
   else:
-    st.warning("Ajun kontahi record nahiye. Entries add kara.")
+    st.warning("Ajun kontahi record nahiye. Manual Entry kinva AI Reader vapra.")
